@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Snake Classic - Arcade Web Edition (V1)</title>
+    <meta name="description" content="Classic 2D Grid Arcade Snake Game built with Phaser 3, TypeScript, and Vite." />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=Press+Start+2P&display=swap" rel="stylesheet">
+  </head>
+  <body>
+    <div id="app">
+      <main class="arcade-container">
+        <!-- Header / Logo -->
+        <header class="arcade-header">
+          <div class="logo-group">
+            <span class="icon">🐍</span>
+            <div>
+              <h1 class="game-title">SNAKE CLASSIC</h1>
+              <p class="game-subtitle">2D GRID ARCADE • PHASER 3 ENGINE</p>
+            </div>
+          </div>
+          <div class="badge-v1">V1.0 MVP</div>
+        </header>
+
+        <!-- Stats Bar -->
+        <section class="stats-bar">
+          <div class="stat-card">
+            <span class="stat-label">SCORE</span>
+            <span id="current-score" class="stat-value">0</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">BEST</span>
+            <span id="high-score-display" class="stat-value highlight">0</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">GRID</span>
+            <span class="stat-value">20 × 20</span>
+          </div>
+        </section>
+
+        <!-- Phaser Canvas Container -->
+        <div class="game-screen-wrapper">
+          <div id="game-container"></div>
+        </div>
+
+        <!-- Controls Legend -->
+        <footer class="controls-card">
+          <div class="control-item">
+            <span class="key-badge">↑ ↓ ← →</span>
+            <span class="control-label">Move Snake</span>
+          </div>
+          <div class="control-item">
+            <span class="key-badge">W A S D</span>
+            <span class="control-label">Alt Controls</span>
+          </div>
+          <div class="control-item">
+            <span class="key-badge">SPACE</span>
+            <span class="control-label">Pause / Start</span>
+          </div>
+        </footer>
+      </main>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+    <script>
+      // Sync local storage high score to HTML header badge
+      function updateHeaderHighScore() {
+        const val = localStorage.getItem('snake_classic_highscore') || '0';
+        const el = document.getElementById('high-score-display');
+        if (el) el.textContent = val;
+      }
+      window.addEventListener('DOMContentLoaded', updateHeaderHighScore);
+      setInterval(updateHeaderHighScore, 1000);
+    </script>
+  </body>
+</html>
