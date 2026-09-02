@@ -4,7 +4,7 @@ import { GameScene } from './scenes/GameScene';
 import { GameOverScene } from './scenes/GameOverScene';
 import { CANVAS_WIDTH, CANVAS_HEIGHT, getHighScore } from './utils/helpers';
 import { getSettings, saveSettings, Difficulty, Theme, GridSize } from './utils/settings';
-import { getLeaderboard, recordScore } from './utils/leaderboard';
+import { getLeaderboard } from './utils/leaderboard';
 import { soundManager } from './utils/audio';
 import './style.css';
 
@@ -28,6 +28,15 @@ const config: Phaser.Types.Core.GameConfig = {
     }
   }
 };
+
+function getActiveGameScene(): GameScene | null {
+  if (!game) return null;
+  const scene = game.scene.getScene('GameScene') as GameScene;
+  if (scene && scene.scene.isActive()) {
+    return scene;
+  }
+  return null;
+}
 
 function syncUIWithSettings(): void {
   const settings = getSettings();
@@ -79,9 +88,15 @@ function setupDOMListeners(): void {
   const modalSettings = document.getElementById('modal-settings');
   const modalLeaderboard = document.getElementById('modal-leaderboard');
 
-  // Open Settings Modal
+  // Open Settings Modal & AUTO-PAUSE game
   document.getElementById('btn-settings')?.addEventListener('click', () => {
     soundManager.playClickSound();
+
+    const activeScene = getActiveGameScene();
+    if (activeScene) {
+      activeScene.pauseGame();
+    }
+
     syncUIWithSettings();
     modalSettings?.classList.remove('hidden');
   });
@@ -92,9 +107,15 @@ function setupDOMListeners(): void {
     modalSettings?.classList.add('hidden');
   });
 
-  // Open Leaderboard Modal
+  // Open Leaderboard Modal & AUTO-PAUSE game
   document.getElementById('btn-leaderboard')?.addEventListener('click', () => {
     soundManager.playClickSound();
+
+    const activeScene = getActiveGameScene();
+    if (activeScene) {
+      activeScene.pauseGame();
+    }
+
     renderLeaderboardUI();
     modalLeaderboard?.classList.remove('hidden');
   });
@@ -108,7 +129,7 @@ function setupDOMListeners(): void {
   // Toggle Sound Button
   document.getElementById('btn-sound-toggle')?.addEventListener('click', () => {
     const settings = getSettings();
-    const updated = saveSettings({ soundEnabled: !settings.soundEnabled });
+    saveSettings({ soundEnabled: !settings.soundEnabled });
     soundManager.playClickSound();
     syncUIWithSettings();
   });
@@ -127,13 +148,16 @@ function setupDOMListeners(): void {
   setupOptionGroup('opt-theme', (val) => saveSettings({ theme: val as Theme }));
   setupOptionGroup('opt-grid', (val) => saveSettings({ gridSize: parseInt(val, 10) as GridSize }));
 
-  // Save Settings & Apply Button
+  // Save Settings & Resume / Restart Button
   document.getElementById('save-settings-btn')?.addEventListener('click', () => {
     soundManager.playClickSound();
     modalSettings?.classList.add('hidden');
     syncUIWithSettings();
 
-    if (game) {
+    const activeScene = getActiveGameScene();
+    if (activeScene) {
+      activeScene.resumeGame();
+    } else if (game) {
       game.scene.start('MenuScene');
     }
   });

@@ -1,12 +1,11 @@
 import Phaser from 'phaser';
 import { Snake } from '../entities/Snake';
-import { Food } from '../entities/Food';
+import { Food, PreyType } from '../entities/Food';
 import {
   CANVAS_WIDTH,
   CANVAS_HEIGHT,
   DIRECTIONS,
-  isSamePosition,
-  Position
+  isSamePosition
 } from '../utils/helpers';
 import { getSettings, THEMES, DIFFICULTY_SPEEDS } from '../utils/settings';
 import { soundManager } from '../utils/audio';
@@ -46,6 +45,22 @@ export class GameScene extends Phaser.Scene {
 
   constructor() {
     super({ key: 'GameScene' });
+  }
+
+  public pauseGame(): void {
+    if (this.isGameOver) return;
+    this.isPaused = true;
+    if (this.pauseText) this.pauseText.setVisible(true);
+  }
+
+  public resumeGame(): void {
+    if (this.isGameOver) return;
+    this.isPaused = false;
+    if (this.pauseText) this.pauseText.setVisible(false);
+  }
+
+  public isGamePaused(): boolean {
+    return this.isPaused;
   }
 
   create(): void {
@@ -120,8 +135,11 @@ export class GameScene extends Phaser.Scene {
 
   private togglePause(): void {
     if (this.isGameOver) return;
-    this.isPaused = !this.isPaused;
-    this.pauseText.setVisible(this.isPaused);
+    if (this.isPaused) {
+      this.resumeGame();
+    } else {
+      this.pauseGame();
+    }
     soundManager.playClickSound();
   }
 
@@ -159,30 +177,33 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
-    // 3. Check Food Collision
+    // 3. Check Prey Swallow Collision
     const head = this.snake.getHead();
-    const foodPos = this.food.getPosition();
+    const preyPos = this.food.getPosition();
 
-    if (isSamePosition(head, foodPos)) {
-      const isGolden = this.food.getType() === 'golden';
+    if (isSamePosition(head, preyPos)) {
+      const preyType = this.food.getType();
       const points = this.food.getPoints();
 
       this.snake.grow();
       this.score += points;
       this.notifyScoreUpdate();
 
-      soundManager.playEatSound(isGolden);
-      this.spawnEatParticles(foodPos.x, foodPos.y, isGolden);
-      this.spawnFloatingScore(foodPos.x, foodPos.y, points);
+      soundManager.playEatSound(preyType);
+      this.spawnPreyEatParticles(preyPos.x, preyPos.y, preyType);
+      this.spawnFloatingScore(preyPos.x, preyPos.y, points);
 
       this.food.spawn(this.gridSize, this.snake.getBody());
     }
   }
 
-  private spawnEatParticles(cellX: number, cellY: number, isGolden: boolean): void {
+  private spawnPreyEatParticles(cellX: number, cellY: number, preyType: PreyType): void {
     const px = cellX * this.cellSize + this.cellSize / 2;
     const py = cellY * this.cellSize + this.cellSize / 2;
-    const color = isGolden ? 0xffcc00 : 0xff0055;
+    let color = 0x4caf50; // Frog green
+    if (preyType === 'bug') color = 0xff9800;
+    if (preyType === 'egg') color = 0xfff8e1;
+    if (preyType === 'gecko') color = 0xffcc00;
 
     for (let i = 0; i < 16; i++) {
       const angle = Math.random() * Math.PI * 2;
@@ -203,11 +224,11 @@ export class GameScene extends Phaser.Scene {
   private spawnFloatingScore(cellX: number, cellY: number, points: number): void {
     const px = cellX * this.cellSize + this.cellSize / 2;
     const py = cellY * this.cellSize + this.cellSize / 2;
-    const colorStr = points > 1 ? '#ffcc00' : '#00ff88';
+    const colorStr = points >= 3 ? '#ffcc00' : '#00ff88';
 
     const textObj = this.add.text(px, py, `+${points}`, {
       fontFamily: 'system-ui, Arial, sans-serif',
-      fontSize: points > 1 ? '22px' : '18px',
+      fontSize: points >= 3 ? '22px' : '18px',
       color: colorStr,
       stroke: '#000000',
       strokeThickness: 3
@@ -255,63 +276,72 @@ export class GameScene extends Phaser.Scene {
     const settings = getSettings();
     const theme = THEMES[settings.theme] || THEMES.cyber;
 
-    // 1. Draw Grid Arena Lines
-    this.graphics.lineStyle(1, theme.gridLines, theme.gridAlpha);
-    for (let x = 0; x <= CANVAS_WIDTH; x += this.cellSize) {
-      this.graphics.lineBetween(x, 0, x, CANVAS_HEIGHT);
-    }
-    for (let y = 0; y <= CANVAS_HEIGHT; y += this.cellSize) {
-      this.graphics.lineBetween(0, y, CANVAS_WIDTH, y);
+    // 1. Draw Real Natural Ground / Grassland Terrain (NO rigid box grid lines!)
+    // Decorative organic grass tufts & soil dots
+    this.graphics.fillStyle(theme.gridLines, 0.08);
+    for (let i = 0; i < 24; i++) {
+      const gx = ((i * 37) % CANVAS_WIDTH);
+      const gy = ((i * 53) % CANVAS_HEIGHT);
+      this.graphics.fillCircle(gx, gy, 2);
+      this.graphics.fillCircle(gx + 3, gy - 2, 1.5);
     }
 
-    // Arena Outer Glowing Border
-    this.graphics.lineStyle(3, theme.gridLines, 0.4);
-    this.graphics.strokeRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    // Natural Perimeter Stone/Log Border
+    this.graphics.lineStyle(4, theme.gridLines, 0.5);
+    this.graphics.strokeRect(2, 2, CANVAS_WIDTH - 4, CANVAS_HEIGHT - 4);
 
-    // 2. Draw Realistic Food
-    const foodPos = this.food.getPosition();
-    const foodType = this.food.getType();
-    const foodCenterX = foodPos.x * this.cellSize + this.cellSize / 2;
-    const foodCenterY = foodPos.y * this.cellSize + this.cellSize / 2;
+    // 2. Draw Realistic Wild Snake Prey (Frog, Bug, Egg, Gecko)
+    const preyPos = this.food.getPosition();
+    const preyType = this.food.getType();
+    const preyCenterX = preyPos.x * this.cellSize + this.cellSize / 2;
+    const preyCenterY = preyPos.y * this.cellSize + this.cellSize / 2;
     const radius = (this.cellSize / 2) - 2;
 
-    if (foodType === 'golden') {
-      // Golden Apple Aura & Star Sparkles
-      this.graphics.fillStyle(theme.foodGlow, 0.35);
-      this.graphics.fillCircle(foodCenterX, foodCenterY, radius + 4);
-
-      // Gold Body
-      this.graphics.fillStyle(0xffcc00, 1.0);
-      this.graphics.fillCircle(foodCenterX, foodCenterY, radius);
-
-      // Shiny specular highlight
-      this.graphics.fillStyle(0xffffff, 0.8);
-      this.graphics.fillCircle(foodCenterX - radius * 0.35, foodCenterY - radius * 0.35, radius * 0.3);
-
-      // Stem & Leaf
-      this.graphics.lineStyle(2, 0x8b5a2b, 1.0);
-      this.graphics.lineBetween(foodCenterX, foodCenterY - radius, foodCenterX + 2, foodCenterY - radius - 4);
-      this.graphics.fillStyle(0x00ff88, 1.0);
-      this.graphics.fillCircle(foodCenterX + 4, foodCenterY - radius - 3, 2);
-    } else {
-      // Normal Apple Aura
-      this.graphics.fillStyle(theme.foodGlow, 0.25);
-      this.graphics.fillCircle(foodCenterX, foodCenterY, radius + 3);
-
-      // Apple Body
-      this.graphics.fillStyle(theme.foodBody, 1.0);
-      this.graphics.fillCircle(foodCenterX, foodCenterY, radius);
-
-      // Specular highlight
-      this.graphics.fillStyle(0xffffff, 0.7);
-      this.graphics.fillCircle(foodCenterX - radius * 0.35, foodCenterY - radius * 0.35, radius * 0.25);
-
-      // Green Leaf
+    if (preyType === 'frog') {
+      // 🐸 GREEN TREE FROG
+      // Body
       this.graphics.fillStyle(0x4caf50, 1.0);
-      this.graphics.fillCircle(foodCenterX + 3, foodCenterY - radius - 2, 2.5);
+      this.graphics.fillCircle(preyCenterX, preyCenterY, radius);
+      // Hind leg folds
+      this.graphics.fillCircle(preyCenterX - radius * 0.7, preyCenterY + radius * 0.3, radius * 0.45);
+      this.graphics.fillCircle(preyCenterX + radius * 0.7, preyCenterY + radius * 0.3, radius * 0.45);
+      // Bulging eyes on top
+      this.graphics.fillStyle(0xffeb3b, 1.0);
+      this.graphics.fillCircle(preyCenterX - radius * 0.4, preyCenterY - radius * 0.6, radius * 0.35);
+      this.graphics.fillCircle(preyCenterX + radius * 0.4, preyCenterY - radius * 0.6, radius * 0.35);
+      // Pupils
+      this.graphics.fillStyle(0x000000, 1.0);
+      this.graphics.fillCircle(preyCenterX - radius * 0.4, preyCenterY - radius * 0.6, radius * 0.18);
+      this.graphics.fillCircle(preyCenterX + radius * 0.4, preyCenterY - radius * 0.6, radius * 0.18);
+    } else if (preyType === 'bug') {
+      // 🦗 FOREST BUG / GRASSHOPPER
+      this.graphics.fillStyle(0xff9800, 1.0);
+      this.graphics.fillCircle(preyCenterX, preyCenterY, radius * 0.75);
+      // Antennae
+      this.graphics.lineStyle(1.5, 0xffeb3b, 1.0);
+      this.graphics.lineBetween(preyCenterX, preyCenterY, preyCenterX - 6, preyCenterY - 8);
+      this.graphics.lineBetween(preyCenterX, preyCenterY, preyCenterX + 6, preyCenterY - 8);
+    } else if (preyType === 'egg') {
+      // 🥚 BIRD EGG
+      this.graphics.fillStyle(0xfff8e1, 1.0);
+      this.graphics.fillCircle(preyCenterX, preyCenterY, radius * 0.85);
+      // Speckles
+      this.graphics.fillStyle(0x8d6e63, 0.8);
+      this.graphics.fillCircle(preyCenterX - 3, preyCenterY - 2, 1.5);
+      this.graphics.fillCircle(preyCenterX + 2, preyCenterY + 3, 1.5);
+    } else if (preyType === 'gecko') {
+      // 🦎 GOLDEN GECKO / MOUSE (RARE)
+      this.graphics.fillStyle(0xffcc00, 0.35);
+      this.graphics.fillCircle(preyCenterX, preyCenterY, radius + 4);
+
+      this.graphics.fillStyle(0xffaa00, 1.0);
+      this.graphics.fillCircle(preyCenterX, preyCenterY, radius);
+
+      this.graphics.fillStyle(0xffffff, 0.9);
+      this.graphics.fillCircle(preyCenterX - 3, preyCenterY - 3, 2.5);
     }
 
-    // 3. Draw Interpolated Snake Segments (Silky 60 FPS Crawling)
+    // 3. Draw Interpolated Snake Segments (Realistic Viper/Cobra Anatomy)
     const body = this.snake.getBody();
     const prevBody = this.snake.getPreviousBody();
     const snakeLength = body.length;
@@ -321,7 +351,7 @@ export class GameScene extends Phaser.Scene {
       const curr = body[i];
       const prev = prevBody[i] || curr;
 
-      // Lerp position sub-cell
+      // Lerp sub-cell position
       const interpX = (prev.x + (curr.x - prev.x) * progress) * this.cellSize;
       const interpY = (prev.y + (curr.y - prev.y) * progress) * this.cellSize;
 
@@ -329,65 +359,58 @@ export class GameScene extends Phaser.Scene {
       const segCenterY = interpY + this.cellSize / 2;
 
       if (i === 0) {
-        // --- SNAKE HEAD ---
+        // --- REALISTIC VIPER/COBRA HEAD ---
         const dir = this.snake.getDirection();
 
-        // Head Capsule Body
+        // Triangular Viper Head Base
         this.graphics.fillStyle(theme.snakeHead, 1.0);
-        this.graphics.fillRoundedRect(interpX + 1, interpY + 1, this.cellSize - 2, this.cellSize - 2, 6);
+        this.graphics.fillRoundedRect(interpX + 1, interpY + 1, this.cellSize - 2, this.cellSize - 2, 7);
 
-        // Directional Eye Orientation
-        const eyeOffset = 4;
-        const eyeRadius = Math.max(2, this.cellSize / 8);
+        // Predator Slit Eyes
+        const eyeOffset = 5;
         let leftEyeX = segCenterX - eyeOffset;
         let leftEyeY = segCenterY - eyeOffset;
         let rightEyeX = segCenterX + eyeOffset;
         let rightEyeY = segCenterY - eyeOffset;
 
         if (dir.x === 1) { // Right
-          leftEyeX = segCenterX + eyeOffset;
-          leftEyeY = segCenterY - eyeOffset;
-          rightEyeX = segCenterX + eyeOffset;
-          rightEyeY = segCenterY + eyeOffset;
+          leftEyeX = segCenterX + eyeOffset; leftEyeY = segCenterY - eyeOffset;
+          rightEyeX = segCenterX + eyeOffset; rightEyeY = segCenterY + eyeOffset;
         } else if (dir.x === -1) { // Left
-          leftEyeX = segCenterX - eyeOffset;
-          leftEyeY = segCenterY - eyeOffset;
-          rightEyeX = segCenterX - eyeOffset;
-          rightEyeY = segCenterY + eyeOffset;
+          leftEyeX = segCenterX - eyeOffset; leftEyeY = segCenterY - eyeOffset;
+          rightEyeX = segCenterX - eyeOffset; rightEyeY = segCenterY + eyeOffset;
         } else if (dir.y === 1) { // Down
-          leftEyeX = segCenterX - eyeOffset;
-          leftEyeY = segCenterY + eyeOffset;
-          rightEyeX = segCenterX + eyeOffset;
-          rightEyeY = segCenterY + eyeOffset;
+          leftEyeX = segCenterX - eyeOffset; leftEyeY = segCenterY + eyeOffset;
+          rightEyeX = segCenterX + eyeOffset; rightEyeY = segCenterY + eyeOffset;
         }
 
-        // White of Eyes
-        this.graphics.fillStyle(0xffffff, 1.0);
-        this.graphics.fillCircle(leftEyeX, leftEyeY, eyeRadius);
-        this.graphics.fillCircle(rightEyeX, rightEyeY, eyeRadius);
+        // Yellow Eye Iris
+        this.graphics.fillStyle(0xffeb3b, 1.0);
+        this.graphics.fillCircle(leftEyeX, leftEyeY, 3);
+        this.graphics.fillCircle(rightEyeX, rightEyeY, 3);
 
-        // Black Pupil Pupil
-        this.graphics.fillStyle(0x000000, 1.0);
-        this.graphics.fillCircle(leftEyeX + dir.x, leftEyeY + dir.y, eyeRadius * 0.5);
-        this.graphics.fillCircle(rightEyeX + dir.x, rightEyeY + dir.y, eyeRadius * 0.5);
+        // Vertical Slit Predator Pupil
+        this.graphics.lineStyle(1.5, 0x000000, 1.0);
+        this.graphics.lineBetween(leftEyeX, leftEyeY - 2, leftEyeX, leftEyeY + 2);
+        this.graphics.lineBetween(rightEyeX, rightEyeY - 2, rightEyeX, rightEyeY + 2);
 
-        // Animated Flickering Tongue
-        if (Math.sin(this.tongueTimer * 0.015) > 0.4) {
+        // Animated Forked Pink Tongue
+        if (Math.sin(this.tongueTimer * 0.015) > 0.3) {
           this.graphics.lineStyle(2, 0xff0055, 1.0);
-          const tongueLen = 7;
+          const tongueLen = 8;
           const tx = segCenterX + dir.x * (this.cellSize / 2);
           const ty = segCenterY + dir.y * (this.cellSize / 2);
           this.graphics.lineBetween(tx, ty, tx + dir.x * tongueLen, ty + dir.y * tongueLen);
         }
       } else {
-        // --- SNAKE BODY ---
+        // --- REALISTIC SNAKE SCALES BODY ---
         const alpha = Math.max(0.5, 1 - (i / snakeLength) * 0.45);
-        const scaleRadius = Math.max(2, (this.cellSize / 2) - (i * 0.2));
+        const scaleRadius = Math.max(2, (this.cellSize / 2) - (i * 0.18));
 
         this.graphics.fillStyle(theme.snakeBody, alpha);
         this.graphics.fillCircle(segCenterX, segCenterY, scaleRadius);
 
-        // Inner shine gradient circle
+        // Overlapping scale spine highlight
         this.graphics.fillStyle(0xffffff, alpha * 0.25);
         this.graphics.fillCircle(segCenterX - scaleRadius * 0.2, segCenterY - scaleRadius * 0.2, scaleRadius * 0.4);
       }
@@ -411,7 +434,7 @@ export class GameScene extends Phaser.Scene {
     this.isGameOver = true;
     soundManager.playGameOverSound();
 
-    // Camera Impact Screen Shake on Collision ("Reality Feeling")
+    // Camera Impact Screen Shake on Collision
     this.cameras.main.shake(300, 0.02);
 
     this.time.delayedCall(400, () => {

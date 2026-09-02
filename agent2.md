@@ -123,3 +123,5 @@ snake-game/
 | 1 Sep 2026 | PRD created. V1-V3 roadmap defined. Mobile support targeted for V3. |
 | 2 Sep 2026 | ✅ **V1 Completed**: Phaser 3 + TypeScript + Vite + Vitest baseline. 23/23 tests passing. |
 | 2 Sep 2026 | 🎉 **V2 Realistic Edition Completed**: Added 60 FPS sub-cell lerp interpolation, realistic snake head with directional pupils & flickering tongue, shiny red & golden bonus apples, Web Audio API synthesizer, particle explosion FX, collision screen-shake, interactive Settings modal, and Top 5 Local Leaderboard. 28/28 unit tests passing, production bundle built. |
+| 2 Sep 2026 | 🌿 **V2.1 Wildlife Upgrade Completed**: Auto-pause on Settings/Leaderboard modals, organic grassland terrain (removed box grid lines), wild snake prey (Green Tree Frog 🐸, Forest Bug 🦗, Bird Egg 🥚, Golden Gecko 🦎), wild snake audio synthesis (swallow gulp crunch & warning hiss), and viper slit pupil anatomy. 29/29 Vitest tests passing. |
+

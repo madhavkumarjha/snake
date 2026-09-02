@@ -33,4 +33,13 @@ describe('Food Entity Unit Tests', () => {
     const pos2 = food.spawn(20, [pos1]);
     expect(pos2).not.toEqual(pos1);
   });
+
+  it('returns valid wild prey type and positive points value', () => {
+    const food = new Food(20);
+    const type = food.getType();
+    const pts = food.getPoints();
+
+    expect(['frog', 'bug', 'egg', 'gecko']).toContain(type);
+    expect(pts).toBeGreaterThanOrEqual(1);
+  });
 });
