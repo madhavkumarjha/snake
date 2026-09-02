@@ -3,13 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Snake Classic - Arcade Web Edition (V1)</title>
-    <meta name="description" content="Classic 2D Grid Arcade Snake Game built with Phaser 3, TypeScript, and Vite." />
+    <title>Snake V2 - Realistic Arcade Web Edition</title>
+    <meta name="description" content="Realistic 2D Grid Arcade Snake Game built with Phaser 3, TypeScript, Web Audio API, and Vite." />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=Press+Start+2P&display=swap" rel="stylesheet">
   </head>
-  <body>
+  <body class="theme-cyber">
     <div id="app">
       <main class="arcade-container">
         <!-- Header / Logo -->
@@ -18,10 +18,15 @@
             <span class="icon">🐍</span>
             <div>
               <h1 class="game-title">SNAKE CLASSIC</h1>
-              <p class="game-subtitle">2D GRID ARCADE • PHASER 3 ENGINE</p>
+              <p class="game-subtitle">2D REALISTIC ARCADE • PHASER 3 ENGINE</p>
             </div>
           </div>
-          <div class="badge-v1">V1.0 MVP</div>
+          <div class="header-actions">
+            <button id="btn-sound-toggle" class="icon-btn" title="Toggle Sound">🔊</button>
+            <button id="btn-leaderboard" class="icon-btn" title="Leaderboard">🏆</button>
+            <button id="btn-settings" class="icon-btn" title="Settings">⚙️</button>
+            <div class="badge-v2">V2.0 REALISTIC</div>
+          </div>
         </header>
 
         <!-- Stats Bar -->
@@ -35,8 +40,12 @@
             <span id="high-score-display" class="stat-value highlight">0</span>
           </div>
           <div class="stat-card">
+            <span class="stat-label">DIFFICULTY</span>
+            <span id="difficulty-display" class="stat-value">MEDIUM</span>
+          </div>
+          <div class="stat-card">
             <span class="stat-label">GRID</span>
-            <span class="stat-value">20 × 20</span>
+            <span id="grid-size-display" class="stat-value">20 × 20</span>
           </div>
         </section>
 
@@ -63,16 +72,75 @@
       </main>
     </div>
 
+    <!-- Settings Modal -->
+    <div id="modal-settings" class="modal-backdrop hidden">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h2>⚙️ GAME SETTINGS</h2>
+          <button id="close-settings" class="close-btn">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="setting-group">
+            <label>DIFFICULTY / SPEED</label>
+            <div class="option-grid" id="opt-difficulty">
+              <button class="opt-btn" data-val="easy">Easy (250ms)</button>
+              <button class="opt-btn" data-val="medium">Medium (200ms)</button>
+              <button class="opt-btn" data-val="hard">Hard (140ms)</button>
+              <button class="opt-btn" data-val="insane">Insane (90ms)</button>
+            </div>
+          </div>
+
+          <div class="setting-group">
+            <label>VISUAL THEME</label>
+            <div class="option-grid" id="opt-theme">
+              <button class="opt-btn" data-val="cyber">🟢 Cyber Neon</button>
+              <button class="opt-btn" data-val="grass">🌿 Grass Arena</button>
+              <button class="opt-btn" data-val="retro">🕹️ Retro Arcade</button>
+              <button class="opt-btn" data-val="midnight">🌌 Midnight</button>
+            </div>
+          </div>
+
+          <div class="setting-group">
+            <label>GRID SIZE</label>
+            <div class="option-grid" id="opt-grid">
+              <button class="opt-btn" data-val="15">15 × 15</button>
+              <button class="opt-btn" data-val="20">20 × 20</button>
+              <button class="opt-btn" data-val="25">25 × 25</button>
+            </div>
+          </div>
+
+          <div class="setting-group">
+            <label>SOUND FX & VOLUME</label>
+            <div class="slider-row">
+              <input type="range" id="volume-slider" min="0" max="1" step="0.1" value="0.7">
+              <span id="volume-val">70%</span>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="save-settings-btn" class="primary-btn">DONE & RESTART</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Leaderboard Modal -->
+    <div id="modal-leaderboard" class="modal-backdrop hidden">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h2>🏆 TOP LEADERBOARD</h2>
+          <button id="close-leaderboard" class="close-btn">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div id="leaderboard-list" class="leaderboard-container">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="clear-leaderboard-btn" class="danger-btn">CLEAR HIGH SCORES</button>
+        </div>
+      </div>
+    </div>
+
     <script type="module" src="/src/main.ts"></script>
-    <script>
-      // Sync local storage high score to HTML header badge
-      function updateHeaderHighScore() {
-        const val = localStorage.getItem('snake_classic_highscore') || '0';
-        const el = document.getElementById('high-score-display');
-        if (el) el.textContent = val;
-      }
-      window.addEventListener('DOMContentLoaded', updateHeaderHighScore);
-      setInterval(updateHeaderHighScore, 1000);
-    </script>
   </body>
 </html>

@@ -2,6 +2,7 @@ import { Position, Direction, DIRECTIONS, isOppositeDirection, isSamePosition, G
 
 export class Snake {
   private body: Position[];
+  private previousBody: Position[];
   private direction: Direction;
   private nextDirection: Direction;
   private isGrowing: boolean = false;
@@ -22,6 +23,8 @@ export class Snake {
         y: startPosition.y - i * initialDirection.y
       });
     }
+
+    this.previousBody = this.body.map(p => ({ ...p }));
   }
 
   public getHead(): Position {
@@ -30,6 +33,10 @@ export class Snake {
 
   public getBody(): Position[] {
     return this.body.map(p => ({ ...p }));
+  }
+
+  public getPreviousBody(): Position[] {
+    return this.previousBody.map(p => ({ ...p }));
   }
 
   public getDirection(): Direction {
@@ -49,6 +56,9 @@ export class Snake {
   }
 
   public move(): Position {
+    // Record current state before updating for smooth position interpolation
+    this.previousBody = this.body.map(p => ({ ...p }));
+
     // Commit queued direction for this tick
     this.direction = this.nextDirection;
 
@@ -99,5 +109,6 @@ export class Snake {
       { x: startPosition.x - initialDirection.x, y: startPosition.y - initialDirection.y },
       { x: startPosition.x - 2 * initialDirection.x, y: startPosition.y - 2 * initialDirection.y }
     ];
+    this.previousBody = this.body.map(p => ({ ...p }));
   }
 }

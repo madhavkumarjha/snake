@@ -1,5 +1,8 @@
 import Phaser from 'phaser';
 import { CANVAS_WIDTH, CANVAS_HEIGHT, getHighScore, saveHighScore } from '../utils/helpers';
+import { getSettings, THEMES } from '../utils/settings';
+import { soundManager } from '../utils/audio';
+import { recordScore, getLeaderboard } from '../utils/leaderboard';
 
 interface GameOverData {
   score: number;
@@ -9,6 +12,7 @@ interface GameOverData {
 export class GameOverScene extends Phaser.Scene {
   private finalScore: number = 0;
   private isNewHighScore: boolean = false;
+  private reasonStr: string = 'Collision';
 
   constructor() {
     super({ key: 'GameOverScene' });
@@ -16,90 +20,121 @@ export class GameOverScene extends Phaser.Scene {
 
   init(data: GameOverData): void {
     this.finalScore = data?.score || 0;
+    this.reasonStr = data?.reason || 'Collision';
+
+    const settings = getSettings();
     const oldHighScore = getHighScore();
     const newHighScore = saveHighScore(this.finalScore);
+
     this.isNewHighScore = this.finalScore > oldHighScore && this.finalScore > 0;
+    recordScore(this.finalScore, settings.difficulty);
   }
 
   create(): void {
     const centerX = CANVAS_WIDTH / 2;
     const centerY = CANVAS_HEIGHT / 2;
+    const settings = getSettings();
+    const theme = THEMES[settings.theme] || THEMES.cyber;
 
-    this.cameras.main.setBackgroundColor('#2a1a1e');
+    this.cameras.main.setBackgroundColor('#1c0d12');
 
     // Background overlay grid lines
     const graphics = this.add.graphics();
-    graphics.lineStyle(1, 0x4a2a2a, 0.4);
-    for (let x = 0; x < CANVAS_WIDTH; x += 20) {
+    graphics.lineStyle(1, 0x4a1a24, 0.4);
+    for (let x = 0; x <= CANVAS_WIDTH; x += 20) {
       graphics.lineBetween(x, 0, x, CANVAS_HEIGHT);
     }
-    for (let y = 0; y < CANVAS_HEIGHT; y += 20) {
+    for (let y = 0; y <= CANVAS_HEIGHT; y += 20) {
       graphics.lineBetween(0, y, CANVAS_WIDTH, y);
     }
 
     // GAME OVER Heading
-    this.add.text(centerX, centerY - 80, 'GAME OVER', {
+    this.add.text(centerX, centerY - 110, 'GAME OVER', {
       fontFamily: 'system-ui, Arial, sans-serif',
-      fontSize: '42px',
-      color: '#ff4444',
-      stroke: '#440000',
+      fontSize: '40px',
+      color: '#ff3355',
+      stroke: '#440011',
       strokeThickness: 6
     }).setOrigin(0.5);
 
-    // Score details
-    this.add.text(centerX, centerY - 20, `FINAL SCORE: ${this.finalScore}`, {
+    // Reason subtitle
+    this.add.text(centerX, centerY - 65, `Cause: ${this.reasonStr}`, {
       fontFamily: 'system-ui, Arial, sans-serif',
-      fontSize: '22px',
+      fontSize: '13px',
+      color: '#aa7788'
+    }).setOrigin(0.5);
+
+    // Final Score Display
+    this.add.text(centerX, centerY - 30, `FINAL SCORE: ${this.finalScore}`, {
+      fontFamily: 'system-ui, Arial, sans-serif',
+      fontSize: '24px',
       color: '#ffffff'
     }).setOrigin(0.5);
 
-    const highScoreVal = getHighScore();
-    this.add.text(centerX, centerY + 15, `HIGH SCORE: ${highScoreVal}`, {
-      fontFamily: 'system-ui, Arial, sans-serif',
-      fontSize: '16px',
-      color: '#ffcc00'
-    }).setOrigin(0.5);
-
     if (this.isNewHighScore) {
-      const badge = this.add.text(centerX, centerY + 45, '🎉 NEW HIGH SCORE! 🎉', {
+      const badge = this.add.text(centerX, centerY + 5, '🎉 NEW HIGH SCORE RECORD! 🎉', {
         fontFamily: 'system-ui, Arial, sans-serif',
-        fontSize: '14px',
+        fontSize: '13px',
         color: '#00ff88',
         backgroundColor: '#00ff8822',
-        padding: { x: 10, y: 5 }
+        padding: { x: 12, y: 6 }
       }).setOrigin(0.5);
 
       this.tweens.add({
         targets: badge,
-        scale: 1.1,
-        duration: 500,
+        scale: 1.08,
+        duration: 400,
         yoyo: true,
         repeat: -1
       });
+    } else {
+      const highScoreVal = getHighScore();
+      this.add.text(centerX, centerY + 5, `BEST SCORE: ${highScoreVal}`, {
+        fontFamily: 'system-ui, Arial, sans-serif',
+        fontSize: '15px',
+        color: '#ffcc00'
+      }).setOrigin(0.5);
     }
 
-    // Restart button
-    const restartText = this.add.text(centerX, centerY + 95, 'PLAY AGAIN (SPACE)', {
+    // Leaderboard Summary (Top 3)
+    const leaderboard = getLeaderboard();
+    if (leaderboard.length > 0) {
+      let lbText = '🏆 TOP PLAYERS:\n';
+      leaderboard.slice(0, 3).forEach((entry, idx) => {
+        lbText += `#${idx + 1}  Score: ${entry.score}  (${entry.difficulty.toUpperCase()})\n`;
+      });
+
+      this.add.text(centerX, centerY + 60, lbText, {
+        fontFamily: 'system-ui, Arial, sans-serif',
+        fontSize: '11px',
+        color: '#8888aa',
+        align: 'center'
+      }).setOrigin(0.5);
+    }
+
+    // Play Again Button
+    const restartBtn = this.add.text(centerX, centerY + 120, 'PLAY AGAIN (SPACE)', {
       fontFamily: 'system-ui, Arial, sans-serif',
-      fontSize: '16px',
+      fontSize: '15px',
       color: '#ffffff',
-      backgroundColor: '#ff444444',
+      backgroundColor: '#ff335544',
       padding: { x: 20, y: 10 }
     }).setOrigin(0.5).setInteractive({ useHandCursor: true });
 
     this.tweens.add({
-      targets: restartText,
-      alpha: 0.5,
+      targets: restartBtn,
+      alpha: 0.6,
       duration: 700,
       yoyo: true,
       repeat: -1
     });
 
     const restartGame = () => {
+      soundManager.playClickSound();
       this.scene.start('GameScene');
     };
 
-    restartText.on('pointerdown', restartGame);
+    restartBtn.on('pointerdown', restartGame);
 
     if (this.input.keyboard) {
       this.input.keyboard.once('keydown-SPACE', restartGame);
