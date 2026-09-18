@@ -1,4 +1,6 @@
+/// <reference types="vite-plugin-pwa/client" />
 import Phaser from 'phaser';
+import { registerSW } from 'virtual:pwa-register';
 import { MenuScene } from './scenes/MenuScene';
 import { GameScene } from './scenes/GameScene';
 import { GameOverScene } from './scenes/GameOverScene';
@@ -222,4 +224,16 @@ window.addEventListener('load', () => {
   setupDOMListeners();
   syncUIWithSettings();
   setInterval(syncUIWithSettings, 1000);
+
+  // Register PWA Service Worker
+  registerSW({
+    immediate: true,
+    onNeedRefresh() {
+      console.log('New PWA content available');
+    },
+    onOfflineReady() {
+      console.log('Snake V2 is ready to work offline');
+    }
+  });
 });
+

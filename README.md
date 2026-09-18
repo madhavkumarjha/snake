@@ -1,72 +1,67 @@
-# 🐍 Snake Classic - 2D Arcade Web Edition (V1 MVP)
+# 🐍 Snake Classic V2.5 — Realistic Arcade PWA Edition
 
-> A modern, ultra-responsive 2D grid arcade Snake Game built with **Phaser 3**, **TypeScript**, **Vite**, and **Vitest**.
+> A modern, ultra-responsive 2D grid arcade Snake Game built with **Phaser 3**, **TypeScript**, **Vite**, **vite-plugin-pwa**, and **Web Audio API**. Works 100% **Offline** and is **Installable** on Mobile & Desktop as a Progressive Web App!
 
-![V1 Status](https://img.shields.io/badge/Status-V1%20MVP%20Completed-00ff88?style=for-the-badge)
+![V2.5 PWA Status](https://img.shields.io/badge/Status-V2.5%20PWA%20Completed-00ff88?style=for-the-badge)
+![PWA Ready](https://img.shields.io/badge/PWA-Installable%20%26%20Offline-00ccff?style=for-the-badge)
 ![Phaser 3](https://img.shields.io/badge/Engine-Phaser%203-blue?style=for-the-badge)
 ![TypeScript](https://img.shields.io/badge/Language-TypeScript-3178C6?style=for-the-badge)
-![Vitest](https://img.shields.io/badge/Tests-23%2F23%20Passing-green?style=for-the-badge)
+![Vitest](https://img.shields.io/badge/Tests-29%2F29%20Passing-green?style=for-the-badge)
 
 ---
 
-## 📸 Screenshots & Proof of Implementation
+## 🌟 Key Features (V2.5 PWA Edition)
 
-| 🎮 Start Menu Screen (`MenuScene`) | 🕹️ Live Gameplay (`GameScene`) | 💀 Game Over Screen (`GameOverScene`) |
-| :---: | :---: | :---: |
-| ![Menu Scene](docs/screenshots/menu_scene.png) | ![Game Scene](docs/screenshots/game_scene.png) | ![Game Over Scene](docs/screenshots/game_over_scene.png) |
-
----
-
-## 🌟 Key Features
-
-- **🎮 Phaser 3 Game Engine Integration**: Modular scene architecture (`MenuScene`, `GameScene`, `GameOverScene`).
-- **🎨 Glassmorphic Cyber Arcade UI**: Dark theme (`#0d0e15` & `#1a1a2e`), glowing neon green accents (`#00ff88`), rounded snake segments with eye details, and red food aura.
-- **📊 Real-time Dashboard**: Live Score tracking, Best Score indicator (LocalStorage backed with memory fallback), and Grid size display (20×20).
-- **🕹️ Dual Controls & Keyboard Handlers**: Full support for Arrow Keys (`↑ ↓ ← →`) and `WASD`, plus `Spacebar` for Pause / Resume / Restart.
-- **🛡️ Safe Snake Movement**: Grid-based movement step algorithm (200ms ticks) with **180-degree turn prevention** (preventing accidental self-collision on rapid keypresses).
-- **🧪 100% Passing Automated Unit Test Suite**: 23 Vitest tests covering `Snake`, `Food`, and utility helper logic.
+- **📱 Full PWA & Offline Support**: Integrated `vite-plugin-pwa` with Workbox caching strategy for HTML, CSS, JavaScript bundle, Phaser canvas assets, Web Audio synthesized sound effects, and Google Fonts. Installable directly to Home Screen / Desktop.
+- **⚡ 60 FPS Sub-cell Smooth Interpolation**: Fluid snake crawling physics powered by sub-cell position lerp algorithms.
+- **🎨 Glassmorphic Cyber Arcade Design**: Rich themes (Cyber Neon 🟢, Grass Arena 🌿, Retro Arcade 🕹️, Midnight 🌌), glowing particle FX, floating score popups, and screen-shake collision feedback.
+- **🦎 Wild Snake Wildlife & Prey Upgrade**: Green Tree Frogs 🐸, Forest Bugs 🦗, Bird Eggs 🥚, and Golden Geckos 🦎 with synthesized gulp/crunch sound synthesis & hiss audio FX.
+- **🔊 Synthesized Web Audio API Engine**: Zero-delay browser audio synthesizer for eats, golden star chimes, and crash impacts with adjustable volume slider.
+- **⚙️ Interactive Settings & Leaderboard**: Custom speed difficulties (Easy, Medium, Hard, Insane), 3 grid sizes (15×15, 20×20, 25×25), and persistent Top 5 Local Leaderboard.
+- **🧪 100% Passing Automated Unit Test Suite**: 29 Vitest tests covering `Snake`, `Food`, `settings`, `leaderboard`, and position helper logic.
 
 ---
 
-## 🛠️ Project Structure
+## 🛠️ Project Architecture
 
 ```
 snake/
-├── docs/
-│   └── screenshots/
-│       ├── menu_scene.png
-│       ├── game_scene.png
-│       └── game_over_scene.png
+├── public/                   # PWA App Icons & Web Manifest Assets
+│   ├── apple-touch-icon.png  # iOS Safari bookmark icon (180x180)
+│   ├── favicon.ico           # Browser tab favicon (64x64)
+│   ├── pwa-192x192.png       # Android Home Screen icon (192x192)
+│   └── pwa-512x512.png       # Splash Screen & Maskable icon (512x512)
 ├── src/
 │   ├── entities/
-│   │   ├── Snake.ts          # Grid-based Snake state machine
-│   │   └── Food.ts           # Food spawning algorithm
+│   │   ├── Snake.ts          # Snake entity with lerp interpolation state machine
+│   │   └── Food.ts           # Food & wild prey spawning algorithm
 │   ├── scenes/
-│   │   ├── MenuScene.ts      # Start screen UI scene
-│   │   ├── GameScene.ts      # Main gameplay loop & canvas renderer
-│   │   └── GameOverScene.ts  # Game over screen & score recording
+│   │   ├── MenuScene.ts      # Menu UI scene with dynamic badges
+│   │   ├── GameScene.ts      # Main game loop, rendering & audio triggers
+│   │   └── GameOverScene.ts  # Game over screen & leaderboard recorder
 │   ├── utils/
-│   │   └── helpers.ts        # Position math, directions & LocalStorage
-│   ├── main.ts               # Phaser game initialization
-│   └── style.css             # Cyberpunk glassmorphism layout
+│   │   ├── audio.ts          # Web Audio API sound synthesizer
+│   │   ├── helpers.ts        # Grid math, position utilities & storage
+│   │   ├── leaderboard.ts    # Top 5 score recorder & persistence
+│   │   └── settings.ts       # Theme, difficulty, grid & volume preferences
+│   ├── main.ts               # Phaser game init, PWA Service Worker & modal bindings
+│   └── style.css             # Glassmorphic cyber layout & theme variables
 ├── tests/
-│   ├── Snake.test.ts         # Unit tests for Snake logic & collision
-│   ├── Food.test.ts          # Unit tests for Food spawning
-│   └── helpers.test.ts       # Unit tests for grid math & storage
-├── agaent1.md                # Master PRD (V1 -> V3 Roadmap)
-├── index.html                # Web entry point
-├── .gitignore                # Version control ignore configuration
-├── package.json              # Project dependencies & npm scripts
-├── tsconfig.json             # TypeScript config
-└── vite.config.ts            # Vite & Vitest configuration
+│   ├── Food.test.ts          # Unit tests for food & prey logic
+│   ├── Snake.test.ts         # Unit tests for snake movement & collision
+│   ├── helpers.test.ts       # Unit tests for grid math
+│   └── settings.test.ts      # Unit tests for settings & leaderboard storage
+├── agaent1.md                # Master PRD Specification (V1 -> V3 Roadmap)
+├── agent2.md                 # Detailed Architecture & Feature Specifications
+├── index.html                # Main HTML entry point with settings/leaderboard modals
+├── package.json              # Project dependencies & npm build scripts
+├── tsconfig.json             # TypeScript compiler settings
+└── vite.config.ts            # Vite & VitePWA configuration
 ```
 
 ---
 
-## ⚡ Quick Start & Setup Guide
-
-### Prerequisites
-- Node.js `v18+` or `v24+` installed (`node -v`)
+## ⚡ Quick Start & Development
 
 ### 1. Install Dependencies
 ```bash
@@ -79,29 +74,26 @@ npm run dev
 ```
 Open [http://localhost:3000](http://localhost:3000) in your web browser.
 
-### 3. Execute Unit Test Suite
+### 3. Run Automated Vitest Test Suite
 ```bash
 npm run test
 ```
-Runs 23 automated Vitest unit tests covering entity movement, growth, collisions, and utilities.
 
-### 4. Build Production Bundle
+### 4. Build Production PWA Bundle
 ```bash
 npm run build
 ```
-Generates minified distribution assets in `dist/` ready for web deployment.
+Generates minified assets in `dist/` including `dist/sw.js` (Service Worker) and `dist/manifest.webmanifest`.
+
+### 5. Preview Production PWA Build
+```bash
+npm run preview
+```
 
 ---
 
-## 🌐 Live Deployment Instructions
+## 📱 Installing as a PWA
 
-V1 is ready to be hosted live on any free hosting platform:
-
-- **Vercel**: Import repository to Vercel, set build command to `npm run build` and output folder to `dist`.
-- **Netlify**: Drag & drop the `dist/` folder onto [Netlify Drop](https://app.netlify.com/drop).
-- **GitHub Pages**: Build the project using `npm run build` and publish the `dist/` directory.
-
----
-
-## 📜 Master PRD
-For complete specification guidelines, technical architecture, and the roadmap for V2 (Polish) & V3 (Expo Mobile Port), see [agaent1.md](file:///d:/snake/agaent1.md).
+1. Open the game in **Google Chrome**, **Microsoft Edge**, **Brave**, or **Safari**.
+2. Click the **Install Icon (📥 / ➕)** in your browser's address bar or menu.
+3. The game will install as a native desktop/mobile app and function fully **offline**!
