@@ -86,16 +86,21 @@ export class GameScene extends Phaser.Scene {
     this.graphics = this.add.graphics();
 
     // Pause UI overlay text
-    this.pauseText = this.add.text(CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2, 'PAUSED\n\n[ SPACE ] Resume | [ ESC ] Menu', {
+    this.pauseText = this.add.text(CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2, '⏸ GAME PAUSED\n\nTAP SCREEN OR PRESS SPACE TO RESUME', {
       fontFamily: 'system-ui, Arial, sans-serif',
-      fontSize: '28px',
+      fontSize: '22px',
       color: '#ffcc00',
       align: 'center',
       stroke: '#000000',
       strokeThickness: 5,
-      backgroundColor: '#000000dd',
-      padding: { x: 25, y: 15 }
-    }).setOrigin(0.5).setDepth(20).setVisible(false);
+      backgroundColor: '#000000ee',
+      padding: { x: 30, y: 20 }
+    }).setOrigin(0.5).setDepth(20).setVisible(false).setInteractive({ useHandCursor: true });
+
+    this.pauseText.on('pointerdown', () => {
+      soundManager.playClickSound();
+      this.resumeGame();
+    });
 
     this.setupInputHandlers();
 
@@ -115,15 +120,15 @@ export class GameScene extends Phaser.Scene {
         ESC: Phaser.Input.Keyboard.KeyCodes.ESC
       }) as Record<string, Phaser.Input.Keyboard.Key>;
 
-      cursors.up.on('down', () => this.snake.setDirection(DIRECTIONS.UP));
-      cursors.down.on('down', () => this.snake.setDirection(DIRECTIONS.DOWN));
-      cursors.left.on('down', () => this.snake.setDirection(DIRECTIONS.LEFT));
-      cursors.right.on('down', () => this.snake.setDirection(DIRECTIONS.RIGHT));
+      cursors.up.on('down', () => this.handleDirectionChange(DIRECTIONS.UP));
+      cursors.down.on('down', () => this.handleDirectionChange(DIRECTIONS.DOWN));
+      cursors.left.on('down', () => this.handleDirectionChange(DIRECTIONS.LEFT));
+      cursors.right.on('down', () => this.handleDirectionChange(DIRECTIONS.RIGHT));
 
-      keys.W.on('down', () => this.snake.setDirection(DIRECTIONS.UP));
-      keys.S.on('down', () => this.snake.setDirection(DIRECTIONS.DOWN));
-      keys.A.on('down', () => this.snake.setDirection(DIRECTIONS.LEFT));
-      keys.D.on('down', () => this.snake.setDirection(DIRECTIONS.RIGHT));
+      keys.W.on('down', () => this.handleDirectionChange(DIRECTIONS.UP));
+      keys.S.on('down', () => this.handleDirectionChange(DIRECTIONS.DOWN));
+      keys.A.on('down', () => this.handleDirectionChange(DIRECTIONS.LEFT));
+      keys.D.on('down', () => this.handleDirectionChange(DIRECTIONS.RIGHT));
 
       keys.SPACE.on('down', () => this.togglePause());
       keys.ESC.on('down', () => {
@@ -132,7 +137,7 @@ export class GameScene extends Phaser.Scene {
       });
     }
 
-    // Touch Swipe Gestures
+    // Touch Tap & Swipe Gestures
     let touchStartX = 0;
     let touchStartY = 0;
 
@@ -146,20 +151,29 @@ export class GameScene extends Phaser.Scene {
       const dy = pointer.y - touchStartY;
       const minSwipeDistance = 25;
 
+      // Tap on canvas while paused -> Resume game
+      if (this.isPaused) {
+        if (Math.abs(dx) < minSwipeDistance && Math.abs(dy) < minSwipeDistance) {
+          soundManager.playClickSound();
+          this.resumeGame();
+          return;
+        }
+      }
+
       if (Math.abs(dx) > Math.abs(dy)) {
         if (Math.abs(dx) > minSwipeDistance) {
           if (dx > 0) {
-            this.snake.setDirection(DIRECTIONS.RIGHT);
+            this.handleDirectionChange(DIRECTIONS.RIGHT);
           } else {
-            this.snake.setDirection(DIRECTIONS.LEFT);
+            this.handleDirectionChange(DIRECTIONS.LEFT);
           }
         }
       } else {
         if (Math.abs(dy) > minSwipeDistance) {
           if (dy > 0) {
-            this.snake.setDirection(DIRECTIONS.DOWN);
+            this.handleDirectionChange(DIRECTIONS.DOWN);
           } else {
-            this.snake.setDirection(DIRECTIONS.UP);
+            this.handleDirectionChange(DIRECTIONS.UP);
           }
         }
       }
@@ -184,11 +198,18 @@ export class GameScene extends Phaser.Scene {
       btn.addEventListener('click', handler);
     };
 
-    bindDpad('dpad-up', () => this.snake.setDirection(DIRECTIONS.UP));
-    bindDpad('dpad-down', () => this.snake.setDirection(DIRECTIONS.DOWN));
-    bindDpad('dpad-left', () => this.snake.setDirection(DIRECTIONS.LEFT));
-    bindDpad('dpad-right', () => this.snake.setDirection(DIRECTIONS.RIGHT));
+    bindDpad('dpad-up', () => this.handleDirectionChange(DIRECTIONS.UP));
+    bindDpad('dpad-down', () => this.handleDirectionChange(DIRECTIONS.DOWN));
+    bindDpad('dpad-left', () => this.handleDirectionChange(DIRECTIONS.LEFT));
+    bindDpad('dpad-right', () => this.handleDirectionChange(DIRECTIONS.RIGHT));
     bindDpad('dpad-pause', () => this.togglePause());
+  }
+
+  private handleDirectionChange(direction: { x: number; y: number }): void {
+    if (this.isPaused) {
+      this.resumeGame();
+    }
+    this.snake.setDirection(direction);
   }
 
   private togglePause(): void {
