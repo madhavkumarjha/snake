@@ -70,7 +70,7 @@ export class MenuScene extends Phaser.Scene {
     }).setOrigin(0.5);
 
     // Start Button
-    const startBtn = this.add.text(centerX, centerY + 75, 'PRESS SPACE OR CLICK TO START', {
+    const startBtn = this.add.text(centerX, centerY + 75, 'PRESS SPACE OR TAP TO START', {
       fontFamily: 'system-ui, Arial, sans-serif',
       fontSize: '15px',
       color: '#ffffff',
@@ -88,7 +88,7 @@ export class MenuScene extends Phaser.Scene {
     });
 
     // Footer Help Controls
-    this.add.text(centerX, CANVAS_HEIGHT - 30, 'Arrows / WASD: Move  |  Space: Pause  |  ⚙️ Gear: Settings', {
+    this.add.text(centerX, CANVAS_HEIGHT - 30, 'Arrows / WASD / Swipe: Move  |  Space / ⏸: Pause', {
       fontFamily: 'system-ui, Arial, sans-serif',
       fontSize: '11px',
       color: '#666688'
@@ -100,6 +100,7 @@ export class MenuScene extends Phaser.Scene {
     };
 
     startBtn.on('pointerdown', startGame);
+    this.input.once('pointerdown', startGame);
 
     if (this.input.keyboard) {
       this.input.keyboard.once('keydown-SPACE', startGame);

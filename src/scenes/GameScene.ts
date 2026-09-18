@@ -104,33 +104,91 @@ export class GameScene extends Phaser.Scene {
   }
 
   private setupInputHandlers(): void {
-    if (!this.input.keyboard) return;
+    if (this.input.keyboard) {
+      const cursors = this.input.keyboard.createCursorKeys();
+      const keys = this.input.keyboard.addKeys({
+        W: Phaser.Input.Keyboard.KeyCodes.W,
+        A: Phaser.Input.Keyboard.KeyCodes.A,
+        S: Phaser.Input.Keyboard.KeyCodes.S,
+        D: Phaser.Input.Keyboard.KeyCodes.D,
+        SPACE: Phaser.Input.Keyboard.KeyCodes.SPACE,
+        ESC: Phaser.Input.Keyboard.KeyCodes.ESC
+      }) as Record<string, Phaser.Input.Keyboard.Key>;
 
-    const cursors = this.input.keyboard.createCursorKeys();
-    const keys = this.input.keyboard.addKeys({
-      W: Phaser.Input.Keyboard.KeyCodes.W,
-      A: Phaser.Input.Keyboard.KeyCodes.A,
-      S: Phaser.Input.Keyboard.KeyCodes.S,
-      D: Phaser.Input.Keyboard.KeyCodes.D,
-      SPACE: Phaser.Input.Keyboard.KeyCodes.SPACE,
-      ESC: Phaser.Input.Keyboard.KeyCodes.ESC
-    }) as Record<string, Phaser.Input.Keyboard.Key>;
+      cursors.up.on('down', () => this.snake.setDirection(DIRECTIONS.UP));
+      cursors.down.on('down', () => this.snake.setDirection(DIRECTIONS.DOWN));
+      cursors.left.on('down', () => this.snake.setDirection(DIRECTIONS.LEFT));
+      cursors.right.on('down', () => this.snake.setDirection(DIRECTIONS.RIGHT));
 
-    cursors.up.on('down', () => this.snake.setDirection(DIRECTIONS.UP));
-    cursors.down.on('down', () => this.snake.setDirection(DIRECTIONS.DOWN));
-    cursors.left.on('down', () => this.snake.setDirection(DIRECTIONS.LEFT));
-    cursors.right.on('down', () => this.snake.setDirection(DIRECTIONS.RIGHT));
+      keys.W.on('down', () => this.snake.setDirection(DIRECTIONS.UP));
+      keys.S.on('down', () => this.snake.setDirection(DIRECTIONS.DOWN));
+      keys.A.on('down', () => this.snake.setDirection(DIRECTIONS.LEFT));
+      keys.D.on('down', () => this.snake.setDirection(DIRECTIONS.RIGHT));
 
-    keys.W.on('down', () => this.snake.setDirection(DIRECTIONS.UP));
-    keys.S.on('down', () => this.snake.setDirection(DIRECTIONS.DOWN));
-    keys.A.on('down', () => this.snake.setDirection(DIRECTIONS.LEFT));
-    keys.D.on('down', () => this.snake.setDirection(DIRECTIONS.RIGHT));
+      keys.SPACE.on('down', () => this.togglePause());
+      keys.ESC.on('down', () => {
+        soundManager.playClickSound();
+        this.scene.start('MenuScene');
+      });
+    }
 
-    keys.SPACE.on('down', () => this.togglePause());
-    keys.ESC.on('down', () => {
-      soundManager.playClickSound();
-      this.scene.start('MenuScene');
+    // Touch Swipe Gestures
+    let touchStartX = 0;
+    let touchStartY = 0;
+
+    this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      touchStartX = pointer.x;
+      touchStartY = pointer.y;
     });
+
+    this.input.on('pointerup', (pointer: Phaser.Input.Pointer) => {
+      const dx = pointer.x - touchStartX;
+      const dy = pointer.y - touchStartY;
+      const minSwipeDistance = 25;
+
+      if (Math.abs(dx) > Math.abs(dy)) {
+        if (Math.abs(dx) > minSwipeDistance) {
+          if (dx > 0) {
+            this.snake.setDirection(DIRECTIONS.RIGHT);
+          } else {
+            this.snake.setDirection(DIRECTIONS.LEFT);
+          }
+        }
+      } else {
+        if (Math.abs(dy) > minSwipeDistance) {
+          if (dy > 0) {
+            this.snake.setDirection(DIRECTIONS.DOWN);
+          } else {
+            this.snake.setDirection(DIRECTIONS.UP);
+          }
+        }
+      }
+    });
+
+    // Virtual Mobile D-Pad Buttons
+    const bindDpad = (btnId: string, action: () => void) => {
+      const btn = document.getElementById(btnId);
+      if (!btn) return;
+      let handled = false;
+      const handler = (e: Event) => {
+        if (e.type === 'touchstart') handled = true;
+        else if (e.type === 'click' && handled) {
+          handled = false;
+          return;
+        }
+        e.preventDefault();
+        soundManager.playClickSound();
+        action();
+      };
+      btn.addEventListener('touchstart', handler, { passive: false });
+      btn.addEventListener('click', handler);
+    };
+
+    bindDpad('dpad-up', () => this.snake.setDirection(DIRECTIONS.UP));
+    bindDpad('dpad-down', () => this.snake.setDirection(DIRECTIONS.DOWN));
+    bindDpad('dpad-left', () => this.snake.setDirection(DIRECTIONS.LEFT));
+    bindDpad('dpad-right', () => this.snake.setDirection(DIRECTIONS.RIGHT));
+    bindDpad('dpad-pause', () => this.togglePause());
   }
 
   private togglePause(): void {

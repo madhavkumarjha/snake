@@ -113,7 +113,7 @@ export class GameOverScene extends Phaser.Scene {
     }
 
     // Play Again Button
-    const restartBtn = this.add.text(centerX, centerY + 120, 'PLAY AGAIN (SPACE)', {
+    const restartBtn = this.add.text(centerX, centerY + 120, 'PLAY AGAIN (SPACE OR TAP)', {
       fontFamily: 'system-ui, Arial, sans-serif',
       fontSize: '15px',
       color: '#ffffff',
@@ -135,6 +135,7 @@ export class GameOverScene extends Phaser.Scene {
     };
 
     restartBtn.on('pointerdown', restartGame);
+    this.input.once('pointerdown', restartGame);
 
     if (this.input.keyboard) {
       this.input.keyboard.once('keydown-SPACE', restartGame);
